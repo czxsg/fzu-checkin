@@ -1,0 +1,16 @@
+# ---- 敏感信息，勿提交 ----
+config.yaml
+config.yml
+
+# ---- Python ----
+__pycache__/
+*.pyc
+.venv/
+venv/
+vendor/
+
+# ---- 运行时 ----
+*.log
+run.log
+_tmp/
+.DS_Store
