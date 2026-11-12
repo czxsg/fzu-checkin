@@ -37,15 +37,15 @@ def main():
 
     # GitHub 定时档实测常被延迟 1-4 小时（晚间档可能整批拖到凌晨）：
     # 窗口外到达的运行一律静默跳过（不登录、不推送）；
-    # 卡在窗口边缘（21:30-21:34）的运行等满 21:35 再签，避开服务器刚开窗的边界
+    # 卡在开窗边缘（21:00-21:01）的运行等到 21:02 再签，避开服务器刚开窗的边界
     now = beijing_now()
-    if datetime.time(21, 30) <= now.time() < datetime.time(21, 35):
-        wait = (datetime.datetime.combine(now.date(), datetime.time(21, 35)) - now).total_seconds()
-        print(f"当前北京时间 {now:%H:%M}，等待 {int(wait) + 1} 秒到 21:35 再执行")
+    if datetime.time(21, 0) <= now.time() < datetime.time(21, 2):
+        wait = (datetime.datetime.combine(now.date(), datetime.time(21, 2)) - now).total_seconds()
+        print(f"当前北京时间 {now:%H:%M}，等待 {int(wait) + 1} 秒到 21:02 再执行")
         time.sleep(max(wait, 0) + 1)
         now = beijing_now()
-    if not (datetime.time(21, 35) <= now.time() <= datetime.time(23, 59, 59)):
-        print(f"北京时间 {now:%H:%M} 不在晚点名窗口（21:35-23:59），判定为延迟触发的补跑，静默跳过。")
+    if not (datetime.time(21, 0) <= now.time() <= datetime.time(23, 59, 59)):
+        print(f"北京时间 {now:%H:%M} 不在晚点名窗口（21:00-23:59），判定为延迟触发的补跑，静默跳过。")
         return
 
     # 假期自动跳过：命中校历/自定义区间时什么都不做（默认静默）
@@ -75,10 +75,10 @@ def main():
         status = query_today_task(client, cfg)
     except requests.HTTPError as e:
         # 跨午夜时段（约 0:00-1:00）服务器尚未发布当日计划时会返回 500，
-        # 属正常现象；定时任务设在 21:35/21:50/22:05 不受影响。
+        # 属正常现象；21:00 起每 5 分钟一档，不受影响。
         title = "智汇福大晚点名：服务器暂未返回今日计划"
         print(title, e)
-        # 21:45 前视为首跑，推送提醒一次即可；21:50/22:05 兜底跑静默，避免一晚连推三条
+        # 首跑（21:45 前）推送提醒一次即可；后续补跑静默，避免一晚连推多条
         if beijing_now().time() < datetime.time(21, 45):
             notify(cfg, title, "服务器暂时无今日计划数据（跨天时段/服务波动），本次跳过。稍后自动重试无需操作。")
         else:
@@ -87,7 +87,7 @@ def main():
     init_data = status["init"]
 
     if not status["need_checkin"]:
-        # 静默：21:35 首跑成功时已推送过，21:50 兜底跑只需记日志，不再打扰
+        # 静默：首跑成功时已推送过，后续补跑只需记日志，不再打扰
         print("已签到 / 无需操作（不推送，避免每晚重复通知）")
         return
 

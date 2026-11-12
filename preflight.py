@@ -1,12 +1,12 @@
 """部署预检：不等到晚上，白天也能验证配置对不对。
 
-背景：main.py 只在**北京时间 21:35–23:59** 才执行，其他时间会静默退出。
+背景：main.py 只在**北京时间 21:00–23:59** 才执行，其他时间会静默退出。
 所以白天 `python main.py` 什么都测不出来。本脚本跳过时间窗口判断，
 依次验证：认证（token 或学号密码）→ 今日计划 init → 经纬度是否命中校区。
 
 用法（放到仓库根目录，与 src/ 同级）：
     python preflight.py            # 只检查，不打卡
-    python preflight.py --do       # 真的提交打卡 —— 仅限 21:35–23:59 之间！
+    python preflight.py --do       # 真的提交打卡 —— 仅限 21:00–23:59 之间！
 
 退出码：0 = 通过；1 = 有环节失败（原因见输出）。
 """
@@ -34,11 +34,11 @@ def main() -> int:
     user_cfg = cfg.get("user") or {}
     chk = cfg.get("checkin") or {}
     now = beijing_now()
-    in_window = (21, 35) <= (now.hour, now.minute) and now.hour <= 23
+    in_window = (21, 0) <= (now.hour, now.minute) and now.hour <= 23
 
     print(f"当前北京时间：{now:%Y-%m-%d %H:%M}（{'在' if in_window else '不在'}签到窗口内）")
     if do_checkin and not in_window:
-        print("!! --do 只能在 21:35–23:59 使用，否则服务端会报『不在签到时段』。已中止。")
+        print("!! --do 只能在 21:00–23:59 使用，否则服务端会报『不在签到时段』。已中止。")
         return 1
     print("-" * 56)
 
